@@ -3,6 +3,7 @@
 namespace Camspiers\CSP;
 
 use Monolog\Formatter\FormatterInterface;
+use Monolog\LogRecord;
 
 class LogFormatter implements FormatterInterface
 {
@@ -12,7 +13,7 @@ class LogFormatter implements FormatterInterface
      * @param array $record
      * @return string
      */
-    public function format(array $record)
+    public function format(LogRecord $record)
     {
         $output = (
             '[' . date('Y-m-d H:i:s') . '] ' .
