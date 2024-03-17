@@ -3,22 +3,23 @@
 namespace Camspiers\CSP;
 
 use Monolog\Formatter\FormatterInterface;
+use Monolog\LogRecord;
 
 class LogFormatter implements FormatterInterface
 {
     /**
      * Undocumented function
      *
-     * @param array $record
+     * @param LogRecord $record
      * @return string
      */
-    public function format(array $record)
+    public function format(LogRecord $record)
     {
         $output = (
             '[' . date('Y-m-d H:i:s') . '] ' .
-            $record['channel'] . '.' . $record['level_name'] . ': ' .
-            $record['message'] . ': ' .
-            json_encode($record['context'], JSON_PRETTY_PRINT)
+            $record->channel . '.' . $record->level . ': ' .
+            $record->message . ': ' .
+            json_encode($record->context ?? '', JSON_PRETTY_PRINT)
         );
 
         return $output;
