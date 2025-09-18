@@ -18,7 +18,7 @@ SilverStripe\Core\Injector\Injector:
     class: Monolog\Handler\StreamHandler
     constructor:
       - '../log/csp.log'
-      - '`LOG_LEVEL`'
+      - 200
     properties:
       Formatter: '%$Camspiers\CSP\LogFormatter'
       ContentType: text/plain
