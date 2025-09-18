@@ -17,7 +17,7 @@ class LogFormatter implements FormatterInterface
     {
         $output = (
             '[' . date('Y-m-d H:i:s') . '] ' .
-            $record->channel . '.' . $record->level . ': ' .
+            $record->channel . '.' . $record->level->getName() . ': ' .
             $record->message . ': ' .
             json_encode($record->context ?? '', JSON_PRETTY_PRINT)
         );

@@ -34,7 +34,7 @@ class Controller extends SilverStripeController
 
         $report = json_decode($request->getBody(), true);
 
-        if ($report && isset($report['csp-report'])) {
+        if (is_array($report) && isset($report['csp-report'])) {
 
             $this->logger->info(
                 'Content-Security-Policy violation',
