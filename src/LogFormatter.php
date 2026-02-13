@@ -7,31 +7,21 @@ use Monolog\LogRecord;
 
 class LogFormatter implements FormatterInterface
 {
-    /**
-     * Undocumented function
-     *
-     * @param LogRecord $record
-     * @return string
-     */
-    public function format(LogRecord $record)
+    public function format(LogRecord $record): string
     {
-        $output = (
-            '[' . date('Y-m-d H:i:s') . '] ' .
-            $record->channel . '.' . $record->level->getName() . ': ' .
-            $record->message . ': ' .
-            json_encode($record->context ?? '', JSON_PRETTY_PRINT)
-        );
+        $context = $record->context ? ' ' . json_encode($record->context) : '';
 
-        return $output;
+        return sprintf(
+            "[%s] %s %s - %s%s\n",
+            $record->datetime->format('Y-m-d H:i:s'),
+            $record->level->getName(),
+            $record->channel,
+            $record->message,
+            $context,
+        );
     }
 
-    /**
-     * Formats a set of log records.
-     *
-     * @param  array $records A set of records to format
-     * @return string The formatted set of records
-     */
-    public function formatBatch(array $records)
+    public function formatBatch(array $records): string
     {
         $output = '';
         foreach ($records as $record) {
