@@ -4,32 +4,20 @@ namespace Camspiers\CSP\Tests;
 
 use Camspiers\CSP\Controller;
 use Camspiers\CSP\Logger;
-use PHPUnit\Framework\TestCase;
-use SilverStripe\Control\HTTPRequest;
-use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Dev\SapphireTest;
 
-class ControllerTest extends TestCase
+class ControllerTest extends SapphireTest
 {
-    private Controller $controller;
-    private Logger $logger;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->logger = $this->createMock(Logger::class);
-
-        // Bypass SS Controller constructor which requires full framework bootstrap
-        $ref = new \ReflectionClass(Controller::class);
-        $this->controller = $ref->newInstanceWithoutConstructor();
-        $this->controller->logger = $this->logger;
-
-        $responseProp = new \ReflectionProperty(\SilverStripe\Control\Controller::class, 'response');
-        $responseProp->setValue($this->controller, new HTTPResponse());
-    }
+    protected $usesDatabase = false;
 
     public function testIndexLogsValidCspReport(): void
     {
+        $logger = $this->createMock(Logger::class);
+        Injector::inst()->registerService($logger, Logger::class);
+
+        $controller = Controller::create();
+
         $body = json_encode([
             'csp-report' => [
                 'document-uri' => 'http://example.com/signup.html',
@@ -40,17 +28,16 @@ class ControllerTest extends TestCase
             ],
         ]);
 
-        $request = new HTTPRequest('POST', '/csp-report');
-        $request->setBody($body);
+        $request = $this->buildRequest($body);
 
-        $this->logger->expects($this->once())
+        $logger->expects($this->once())
             ->method('info')
             ->with(
                 'Content-Security-Policy violation',
                 $this->isType('array'),
             );
 
-        $response = $this->controller->index($request);
+        $response = $controller->index($request);
 
         $this->assertSame(204, $response->getStatusCode());
         $this->assertSame('', $response->getBody());
@@ -58,40 +45,59 @@ class ControllerTest extends TestCase
 
     public function testIndexIgnoresInvalidJson(): void
     {
-        $request = new HTTPRequest('POST', '/csp-report');
-        $request->setBody('not json');
+        $logger = $this->createMock(Logger::class);
+        Injector::inst()->registerService($logger, Logger::class);
 
-        $this->logger->expects($this->never())
+        $controller = Controller::create();
+
+        $request = $this->buildRequest('not json');
+
+        $logger->expects($this->never())
             ->method('info');
 
-        $response = $this->controller->index($request);
+        $response = $controller->index($request);
 
         $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testIndexIgnoresMissingCspReport(): void
     {
-        $request = new HTTPRequest('POST', '/csp-report');
-        $request->setBody(json_encode(['other-key' => 'value']));
+        $logger = $this->createMock(Logger::class);
+        Injector::inst()->registerService($logger, Logger::class);
 
-        $this->logger->expects($this->never())
+        $controller = Controller::create();
+
+        $request = $this->buildRequest(json_encode(['other-key' => 'value']));
+
+        $logger->expects($this->never())
             ->method('info');
 
-        $response = $this->controller->index($request);
+        $response = $controller->index($request);
 
         $this->assertSame(204, $response->getStatusCode());
     }
 
     public function testIndexHandlesEmptyBody(): void
     {
-        $request = new HTTPRequest('POST', '/csp-report');
-        $request->setBody('');
+        $logger = $this->createMock(Logger::class);
+        Injector::inst()->registerService($logger, Logger::class);
 
-        $this->logger->expects($this->never())
+        $controller = Controller::create();
+
+        $request = $this->buildRequest('');
+
+        $logger->expects($this->never())
             ->method('info');
 
-        $response = $this->controller->index($request);
+        $response = $controller->index($request);
 
         $this->assertSame(204, $response->getStatusCode());
+    }
+
+    private function buildRequest(string $body): \SilverStripe\Control\HTTPRequest
+    {
+        $request = new \SilverStripe\Control\HTTPRequest('POST', '/csp-report');
+        $request->setBody($body);
+        return $request;
     }
 }
