@@ -6,28 +6,15 @@ use SilverStripe\Control\Controller as SilverStripeController;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 
-/**
- * Class Controller
- * @package Camspiers\CSP
- */
 class Controller extends SilverStripeController
 {
-    /**
-     * This will be set automatically, as long as Controller is instantiated via Injector
-     *
-     * @var Logger
-     */
-    public $logger;
+    public Logger $logger;
 
-    private static $dependencies = [
+    private static array $dependencies = [
         'logger' => '%$' . Logger::class,
     ];
 
-    /**
-     * @param HTTPRequest $request
-     * @return HTTPResponse
-     */
-    public function index(HTTPRequest $request)
+    public function index(HTTPRequest $request): HTTPResponse
     {
         $this->response->setStatusCode(204);
         $this->response->setBody('');

@@ -7,13 +7,7 @@ use Monolog\LogRecord;
 
 class LogFormatter implements FormatterInterface
 {
-    /**
-     * Undocumented function
-     *
-     * @param LogRecord $record
-     * @return string
-     */
-    public function format(LogRecord $record)
+    public function format(LogRecord $record): string
     {
         $output = (
             '[' . date('Y-m-d H:i:s') . '] ' .
@@ -25,13 +19,7 @@ class LogFormatter implements FormatterInterface
         return $output;
     }
 
-    /**
-     * Formats a set of log records.
-     *
-     * @param  array $records A set of records to format
-     * @return string The formatted set of records
-     */
-    public function formatBatch(array $records)
+    public function formatBatch(array $records): string
     {
         $output = '';
         foreach ($records as $record) {
