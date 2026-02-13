@@ -1,25 +1,38 @@
 # SilverStripe Content-Security-Policy Logging
 
-[![Build Status](https://travis-ci.org/camspiers/silverstripe-csp-logging.png?branch=master)](https://travis-ci.org/camspiers/silverstripe-csp-logging)
+Allows the logging of CSP violations in SilverStripe.
 
-Allows the logging of CSP violations in SilverStripe
+## Compatibility
 
-## Installation (with composer)
+| Branch | Silverstripe | PHP |
+|--------|-------------|-----|
+| release/6 | ^6.0 | ^8.5 |
+| release/5 | ^5.1 | ~8.4 |
 
-	composer require camspiers/silverstripe-csp-logging
+## Installation
+
+```bash
+composer require camspiers/silverstripe-csp-logging
+```
 
 ## Usage
 
-Provide an instance of `Psr\Log\LoggerInterface` to the CSP controller:
+1. Set your `Content-Security-Policy` headers
+2. Add `report-uri /csp-report/;` to the header to log violations through SilverStripe
 
-1. Create a file called `mysite/_config/csp.yml` and add your logging service to the controller
+The module registers a route at `/csp-report` and logs violations via Monolog using the Injector configuration in `_config/log.yml`. The default configuration writes to `../log/csp.log`.
+
+### Custom Logger Configuration
+
+Override the logger in your project's YAML config:
 
 ```yaml
-Injector:
-  Camspiers\CSP\Controller:
+SilverStripe\Core\Injector\Injector:
+  Camspiers\CSP\Logger:
+    type: singleton
+    class: Camspiers\CSP\Logger
     constructor:
-      0: %$Monolog
+      - 'Camspiers.CSP'
+    calls:
+      LogFileHandler: [pushHandler, ['%$YourCustomHandler']]
 ```
-
-2. Set your Content-Security-Policy headers
-3. Add "report-uri /csp-report/;" to the `Content-Security-Policy` header to log violations through SilverStripe
