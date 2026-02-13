@@ -1,40 +1,96 @@
 <?php
 
-namespace Camspiers\CSP;
+namespace Camspiers\CSP\Tests;
 
-// Changed from \PHPUnit_Framework_TestCase to \PHPUnit\Framework\TestCase
-class ControllerTest extends \PHPUnit\Framework\TestCase
+use Camspiers\CSP\Controller;
+use Camspiers\CSP\Logger;
+use PHPUnit\Framework\TestCase;
+use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Control\HTTPResponse;
+
+class ControllerTest extends TestCase
 {
-    public function testIndex()
-    {
-        // Changed from getMock to createMock for PHPUnit 9+
-        $logger = $this->createMock('Psr\Log\LoggerInterface');
+    private Controller $controller;
+    private Logger $logger;
 
-        $logger->expects($this->once())
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->logger = $this->createMock(Logger::class);
+        $this->controller = new Controller();
+        $this->controller->logger = $this->logger;
+
+        $response = new HTTPResponse();
+        $reflection = new \ReflectionProperty(Controller::class, 'response');
+        $reflection->setAccessible(true);
+        $reflection->setValue($this->controller, $response);
+    }
+
+    public function testIndexLogsValidCspReport(): void
+    {
+        $body = json_encode([
+            'csp-report' => [
+                'document-uri' => 'http://example.com/signup.html',
+                'referrer' => '',
+                'blocked-uri' => 'http://example.com/css/style.css',
+                'violated-directive' => 'style-src cdn.example.com',
+                'original-policy' => "default-src 'none'; style-src cdn.example.com; report-uri /_/csp-reports",
+            ],
+        ]);
+
+        $request = new HTTPRequest('POST', '/csp-report');
+        $request->setBody($body);
+
+        $this->logger->expects($this->once())
+            ->method('info')
+            ->with(
+                'Content-Security-Policy violation',
+                $this->isType('array'),
+            );
+
+        $response = $this->controller->index($request);
+
+        $this->assertSame(204, $response->getStatusCode());
+        $this->assertSame('', $response->getBody());
+    }
+
+    public function testIndexIgnoresInvalidJson(): void
+    {
+        $request = new HTTPRequest('POST', '/csp-report');
+        $request->setBody('not json');
+
+        $this->logger->expects($this->never())
             ->method('info');
 
-        $controller = new Controller($logger);
-        $prop = new \ReflectionProperty(__NAMESPACE__.'\\Controller', 'response');
-        $prop->setAccessible(true);
-        $prop->setValue($controller, new \SS_HTTPResponse());
+        $response = $this->controller->index($request);
 
-        $req = new \SS_HTTPRequest('GET', '/');
-        $req->setBody(<<<JSON
-{
-  "csp-report": {
-    "document-uri": "http://example.com/signup.html",
-    "referrer": "",
-    "blocked-uri": "http://example.com/css/style.css",
-    "violated-directive": "style-src cdn.example.com",
-    "original-policy": "default-src 'none'; style-src cdn.example.com; report-uri /_/csp-reports"
-  }
-}
-JSON
-        );
+        $this->assertSame(204, $response->getStatusCode());
+    }
 
-        $response = $controller->index($req);
+    public function testIndexIgnoresMissingCspReport(): void
+    {
+        $request = new HTTPRequest('POST', '/csp-report');
+        $request->setBody(json_encode(['other-key' => 'value']));
 
-        $this->assertEquals(204, $response->getStatusCode());
-        $this->assertEquals('', $response->getBody());
+        $this->logger->expects($this->never())
+            ->method('info');
+
+        $response = $this->controller->index($request);
+
+        $this->assertSame(204, $response->getStatusCode());
+    }
+
+    public function testIndexHandlesEmptyBody(): void
+    {
+        $request = new HTTPRequest('POST', '/csp-report');
+        $request->setBody('');
+
+        $this->logger->expects($this->never())
+            ->method('info');
+
+        $response = $this->controller->index($request);
+
+        $this->assertSame(204, $response->getStatusCode());
     }
 }
