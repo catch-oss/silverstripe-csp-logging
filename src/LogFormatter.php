@@ -9,14 +9,16 @@ class LogFormatter implements FormatterInterface
 {
     public function format(LogRecord $record): string
     {
-        $output = (
-            '[' . date('Y-m-d H:i:s') . '] ' .
-            $record->channel . '.' . $record->level->getName() . ': ' .
-            $record->message . ': ' .
-            json_encode($record->context ?? '', JSON_PRETTY_PRINT)
-        );
+        $context = $record->context ? ' ' . json_encode($record->context) : '';
 
-        return $output;
+        return sprintf(
+            "[%s] %s %s - %s%s\n",
+            $record->datetime->format('Y-m-d H:i:s'),
+            $record->level->getName(),
+            $record->channel,
+            $record->message,
+            $context,
+        );
     }
 
     public function formatBatch(array $records): string
