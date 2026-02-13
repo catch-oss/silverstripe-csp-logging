@@ -18,13 +18,14 @@ class ControllerTest extends TestCase
         parent::setUp();
 
         $this->logger = $this->createMock(Logger::class);
-        $this->controller = new Controller();
+
+        // Bypass SS Controller constructor which requires full framework bootstrap
+        $ref = new \ReflectionClass(Controller::class);
+        $this->controller = $ref->newInstanceWithoutConstructor();
         $this->controller->logger = $this->logger;
 
-        $response = new HTTPResponse();
-        $reflection = new \ReflectionProperty(Controller::class, 'response');
-        $reflection->setAccessible(true);
-        $reflection->setValue($this->controller, $response);
+        $responseProp = new \ReflectionProperty(\SilverStripe\Control\Controller::class, 'response');
+        $responseProp->setValue($this->controller, new HTTPResponse());
     }
 
     public function testIndexLogsValidCspReport(): void
